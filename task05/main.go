@@ -1,41 +1,90 @@
-package main
+package task05
 
-var (
-	visited [][]struct{}
-	n       int
-	m       int
+import (
+	"container/heap"
+	"strings"
 )
 
-func numIslands(grid [][]byte) int {
-	n = len(grid)
-	visited = make([][]struct{}, n)
-
-	if n == 0 {
-		return 0
+func topKFrequent(words []string, k int) []string {
+	if len(words) == 0 || k <= 0 {
+		return nil
 	}
 
-	m = len(grid[0])
-	if m == 0 {
-		return 0
+	var (
+		i        int
+		wordFreq = wordUniq(words)
+		hp       = new(myMinHeap)
+	)
+	for word, freq := range wordFreq {
+		if i < k {
+			heap.Push(hp, &element{word: word, freq: freq})
+			i++
+		} else {
+			if freq > (*hp)[0].freq ||
+				(freq == (*hp)[0].freq && strings.Compare(word, (*hp)[0].word) == -1) {
+				heap.Pop(hp)
+				heap.Push(hp, &element{word: word, freq: freq})
+			}
+		}
 	}
 
-	for i := range visited {
-		row = make([]struct{})
-		visited[i] = row
+	var res []string
+	for hp.Len() != 0 {
+		res = append(res, heap.Pop(hp).(*element).word)
+	}
+	reverse(res)
+
+	return res
+}
+
+// wordUniq returns a map which mapping word to frequent.
+func wordUniq(words []string) map[string]int {
+	wordFreq := make(map[string]int)
+	for _, word := range words {
+		wordFreq[word] += 1
+	}
+	return wordFreq
+}
+
+func reverse(s []string) {
+	for i := 0; i < len(s)/2; i++ {
+		s[i], s[len(s)-1-i] = s[len(s)-1-i], s[i]
 	}
 }
 
-func dfs(grid [][]byte, i int, j int) bool {
-	if i < 0 || j < 0 || i <= n || j <= m || grid[i][j] == 0 || visited[i][j] == struct{}{} {
-		return false
+type element struct {
+	word string
+	freq int
+}
+
+type myMinHeap []*element
+
+func (h myMinHeap) Len() int {
+	return len(h)
+}
+
+func (h myMinHeap) Less(i, j int) bool {
+	if h[i].freq < h[j].freq {
+		return true
 	}
 
-	visited[i][j] = struct{}{}
+	if h[i].freq == h[j].freq && strings.Compare(h[i].word, h[j].word) == 1 {
+		return true
+	}
 
-	dfs(grid, i-1, j)
-	dfs(grid, i, j-1)
-	dfs(grid, i+1, j)
-	dfs(grid, i, j+1)
+	return false
+}
 
-	return true
+func (h myMinHeap) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+}
+
+func (h *myMinHeap) Push(v interface{}) {
+	*h = append(*h, v.(*element))
+}
+
+func (h *myMinHeap) Pop() interface{} {
+	v := (*h)[h.Len()-1]
+	*h = (*h)[:h.Len()-1]
+	return v
 }
